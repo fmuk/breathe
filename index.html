@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breathe</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Lato:wght@100;300;400&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+[data-theme="dark"] {
+  --bg:         #07080c;
+  --surface:    #0e1018;
+  --surface2:   #13151f;
+  --border:     rgba(255,255,255,0.08);
+  --border2:    rgba(255,255,255,0.14);
+  --text:       #c8d4e0;
+  --text-strong:#e8f0f8;
+  --muted:      rgba(200,212,224,0.38);
+  --muted2:     rgba(200,212,224,0.18);
+}
+[data-theme="light"] {
+  --bg:         #f2f0eb;
+  --surface:    #ffffff;
+  --surface2:   #f6f4f0;
+  --border:     rgba(0,0,0,0.09);
+  --border2:    rgba(0,0,0,0.16);
+  --text:       #3a3f4a;
+  --text-strong:#1a1e28;
+  --muted:      rgba(58,63,74,0.48);
+  --muted2:     rgba(58,63,74,0.2);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Lato', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px 36px;
+  overflow-x: hidden;
+  transition: background 0.4s, color 0.4s;
+}
+
+/* ── Top bar ── */
+.top-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 10;
+}
+.app-wordmark {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 300;
+  font-size: 1rem;
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.top-controls { display: flex; align-items: center; gap: 8px; }
+
+/* Adult / Child pill */
+.age-pill {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px;
+  transition: background 0.4s, border-color 0.4s;
+}
+.age-opt {
+  font-size: 0.67rem;
+  letter-spacing: 0.1em;
+  padding: 4px 12px;
+  border-radius: 100px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: background 0.2s, color 0.2s;
+  user-select: none;
+  white-space: nowrap;
+}
+.age-opt.active { background: rgba(91,184,232,0.14); color: #5bb8e8; }
+[data-theme="light"] .age-opt.active { background: rgba(15,90,150,0.1); color: #1272a8; }
+
+/* Theme button */
+.theme-btn {
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: 50%;
+  width: 34px; height: 34px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted);
+  transition: transform 0.35s, color 0.3s;
+}
+.theme-btn:hover { transform: rotate(20deg); color: var(--text-strong); }
+.theme-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
+
+/* ── Main wrapper ── */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 360px;
+  padding-top: 52px;
+}
+
+/* ── Child age sub-row ── */
+.child-row {
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.35s ease, opacity 0.3s, margin 0.35s;
+  display: flex;
+  justify-content: center;
+  margin-top: -10px; /* collapses gap when hidden */
+}
+.child-row.visible { max-height: 44px; opacity: 1; margin-top: 0; }
+.child-age-pill {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px;
+  transition: background 0.4s, border-color 0.4s;
+}
+.child-age-opt {
+  font-size: 0.67rem;
+  letter-spacing: 0.1em;
+  padding: 5px 16px;
+  border-radius: 100px;
+  cursor: pointer;
+  color: var(--muted);
+  transition: background 0.2s, color 0.2s;
+  user-select: none;
+}
+.child-age-opt.active { background: rgba(91,184,232,0.14); color: #5bb8e8; }
+[data-theme="light"] .child-age-opt.active { background: rgba(15,90,150,0.1); color: #1272a8; }
+
+/* ── Preset chips ── */
+.presets {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.preset-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 8px 18px;
+  cursor: pointer;
+  font-family: 'Lato', sans-serif;
+  font-weight: 300;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  transition: border-color 0.25s, color 0.25s, background 0.25s;
+  /* Grid stacks both spans in the same cell so button sizes to the widest */
+  display: inline-grid;
+  place-items: center;
+}
+.preset-btn.active {
+  border-color: var(--active-color);
+  color: var(--active-color);
+  background: var(--surface2);
+}
+.chip-cond, .chip-ben {
+  grid-row: 1; grid-column: 1;
+  transition: opacity 0.28s ease;
+  white-space: nowrap;
+  pointer-events: none;
+  font-size: 0.83rem;
+  letter-spacing: 0.08em;
+}
+.chip-ben {
+  opacity: 0;
+  font-style: italic;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  color: var(--text);
+}
+.preset-btn.active .chip-ben { color: var(--active-color); }
+/* Desktop hover */
+@media (hover: hover) {
+  .preset-btn:hover .chip-cond { opacity: 0; }
+  .preset-btn:hover .chip-ben  { opacity: 1; }
+}
+/* Touch tap on active chip */
+.preset-btn.show-benefit .chip-cond { opacity: 0; }
+.preset-btn.show-benefit .chip-ben  { opacity: 1; }
+
+/* ── Mode toggle ── */
+.mode-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity 0.3s;
+}
+.mode-row.hidden { opacity: 0; pointer-events: none; height: 0; overflow: hidden; gap: 0; }
+.mode-label { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.toggle {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 3px;
+  transition: background 0.4s, border-color 0.4s;
+}
+.toggle-opt {
+  font-size: 0.7rem; letter-spacing: 0.1em;
+  padding: 5px 16px; border-radius: 100px;
+  cursor: pointer; color: var(--muted);
+  transition: background 0.2s, color 0.2s;
+  user-select: none;
+}
+.toggle-opt.active { background: rgba(91,184,232,0.14); color: #5bb8e8; }
+[data-theme="light"] .toggle-opt.active { background: rgba(15,90,150,0.1); color: #1272a8; }
+
+/* ── Animation circle ── */
+.anim-wrap {
+  position: relative;
+  width: 230px; height: 230px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.anim-wrap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.track { fill: none; stroke: var(--border2); stroke-width: 1.5; transition: stroke 0.4s; }
+.ring {
+  fill: none; stroke: #5bb8e8; stroke-width: 2.5; stroke-linecap: round;
+  transform-origin: center; transform: rotate(-90deg);
+  filter: drop-shadow(0 0 6px #5bb8e8) drop-shadow(0 0 16px rgba(91,184,232,0.4));
+}
+[data-theme="light"] .ring { filter: brightness(0.68) saturate(1.1); }
+.inner-circle {
+  position: absolute; border-radius: 50%;
+  background: radial-gradient(circle at 38% 35%, rgba(255,255,255,0.22) 0%, #5bb8e8 45%, rgba(91,184,232,0.12) 100%);
+  box-shadow: 0 0 32px 8px rgba(91,184,232,0.25);
+}
+.phase-text {
+  position: absolute; text-align: center; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.p-label {
+  font-family: 'Cormorant Garamond', serif; font-weight: 300;
+  font-size: 1.15rem; letter-spacing: 0.14em; color: #ffffff;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.55); min-height: 1.5rem;
+}
+.p-num {
+  font-family: 'Lato', sans-serif; font-weight: 100;
+  font-size: 2.6rem; color: #ffffff;
+  text-shadow: 0 1px 12px rgba(0,0,0,0.7), 0 0 3px rgba(0,0,0,0.9);
+  line-height: 1; min-height: 3rem;
+}
+
+/* ── Info accordion ── */
+.info-wrap { width: 100%; }
+.info-trigger {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  transition: border-color 0.3s, background 0.4s;
+}
+.info-trigger:hover { border-color: var(--border2); }
+.info-trigger.open { border-radius: 10px 10px 0 0; border-bottom-color: transparent; }
+.info-pattern-inline { display: flex; align-items: center; gap: 8px; flex: 1; }
+.ipi-block { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.ipi-count {
+  font-family: 'Cormorant Garamond', serif; font-weight: 300;
+  font-size: 1.55rem; line-height: 1;
+}
+[data-theme="light"] .ipi-count { filter: brightness(0.55) saturate(1.3); }
+.ipi-name { font-size: 0.57rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.ipi-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--muted2); align-self: center; flex-shrink: 0; }
+.info-chevron { color: var(--muted); transition: transform 0.3s, color 0.3s; flex-shrink: 0; }
+.info-chevron svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.info-trigger.open .info-chevron { transform: rotate(180deg); color: var(--text); }
+.info-body { overflow: hidden; max-height: 0; opacity: 0; transition: max-height 0.38s ease, opacity 0.3s; }
+.info-body.open { max-height: 320px; opacity: 1; }
+.info-inner {
+  padding: 14px 18px 18px; background: var(--surface2);
+  border: 1px solid var(--border); border-top: none;
+  border-radius: 0 0 10px 10px;
+  display: flex; flex-direction: column; gap: 10px; transition: background 0.4s;
+}
+.info-desc {
+  font-family: 'Cormorant Garamond', serif; font-style: italic;
+  font-weight: 300; font-size: 1.02rem; line-height: 1.65; color: var(--text);
+}
+.info-basis {
+  font-size: 0.7rem; letter-spacing: 0.04em; line-height: 1.6; color: var(--muted);
+  border-top: 1px solid var(--border); padding-top: 10px;
+}
+
+/* ── Progress dots ── */
+.progress-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 46px; }
+.progress-label { font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+.dots { display: flex; gap: 9px; flex-wrap: wrap; justify-content: center; max-width: 320px; }
+.dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  border: 1px solid rgba(91,184,232,0.3); background: transparent;
+  transition: background 0.35s, border-color 0.35s, box-shadow 0.35s;
+}
+.dot.done {
+  background: var(--dot-color, #5bb8e8);
+  border-color: var(--dot-color, #5bb8e8);
+  box-shadow: 0 0 6px var(--dot-color, #5bb8e8);
+}
+.dot.goal { animation: goalPulse 1.5s ease-in-out infinite; }
+@keyframes goalPulse {
+  0%,100% { box-shadow: 0 0 6px var(--dot-color,#5bb8e8); }
+  50% { box-shadow: 0 0 18px var(--dot-color,#5bb8e8), 0 0 30px rgba(91,184,232,0.28); }
+}
+.goal-msg { font-size: 0.7rem; letter-spacing: 0.1em; color: #7de8b4; opacity: 0; transition: opacity 0.5s; min-height: 1rem; }
+[data-theme="light"] .goal-msg { color: #177a50; }
+.goal-msg.visible { opacity: 1; }
+
+/* ── Counters ── */
+.counters {
+  display: flex; border: 1px solid var(--border); border-radius: 10px;
+  overflow: hidden; background: var(--surface); transition: background 0.4s, border-color 0.4s;
+}
+.counter { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 36px; }
+.counter + .counter { border-left: 1px solid var(--border); }
+.c-val { font-family: 'Cormorant Garamond', serif; font-weight: 300; font-size: 2.3rem; color: var(--text-strong); line-height: 1; min-width: 2ch; text-align: center; }
+.c-label { font-size: 0.63rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); text-align: center; }
+
+/* ── Start button ── */
+.start-btn {
+  background: transparent;
+  border: 1px solid rgba(91,184,232,0.38);
+  color: #5bb8e8;
+  font-family: 'Lato', sans-serif; font-weight: 300;
+  font-size: 0.76rem; letter-spacing: 0.3em; text-transform: uppercase;
+  padding: 14px 52px; cursor: pointer; border-radius: 3px;
+  transition: background 0.25s, border-color 0.25s, color 0.25s;
+}
+.start-btn:hover { background: rgba(91,184,232,0.08); }
+
+/* ── Particles ── */
+.particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.particle { position: absolute; border-radius: 50%; background: rgba(91,184,232,0.07); animation: drift linear infinite; }
+[data-theme="light"] .particles { display: none; }
+@keyframes drift {
+  from { transform: translateY(100vh) scale(0); opacity: 0; }
+  10%  { opacity: 1; } 90% { opacity: 0.3; }
+  to   { transform: translateY(-20vh) scale(1.2); opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+
+<div class="top-bar">
+  <div class="app-wordmark">Breathe</div>
+  <div class="top-controls">
+    <div class="age-pill">
+      <div class="age-opt active" id="optAdult" onclick="setAgeMode(false)">Adult</div>
+      <div class="age-opt"        id="optChild" onclick="setAgeMode(true)">Child</div>
+    </div>
+    <button class="theme-btn" id="themeBtn" title="Toggle light / dark">
+      <svg id="iconMoon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg id="iconSun"  viewBox="0 0 24 24" style="display:none">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1"  x2="12" y2="3"/>  <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22"   x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>   <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78"  x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64"  x2="19.78" y2="4.22"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<div class="wrapper">
+
+  <!-- Child age sub-row -->
+  <div class="child-row" id="childRow">
+    <div class="child-age-pill">
+      <div class="child-age-opt active" id="optYoung" onclick="setChildAge('young')">Ages 7–9</div>
+      <div class="child-age-opt"        id="optOlder" onclick="setChildAge('older')">Ages 10+</div>
+    </div>
+  </div>
+
+  <!-- Preset chips -->
+  <div class="presets" id="presets"></div>
+
+  <!-- Mode toggle -->
+  <div class="mode-row" id="modeRow">
+    <span class="mode-label">Mode</span>
+    <div class="toggle">
+      <div class="toggle-opt active" id="optUrgent"   onclick="setMode('urgent')">Urgent</div>
+      <div class="toggle-opt"        id="optPractice" onclick="setMode('practice')">Practice</div>
+    </div>
+  </div>
+
+  <!-- Animation -->
+  <div class="anim-wrap">
+    <svg viewBox="0 0 230 230">
+      <circle class="track" cx="115" cy="115" r="100"/>
+      <circle class="ring" id="ring" cx="115" cy="115" r="100"
+        stroke-dasharray="628" stroke-dashoffset="628"/>
+    </svg>
+    <div class="inner-circle" id="innerCircle" style="width:72px;height:72px"></div>
+    <div class="phase-text">
+      <span class="p-label" id="phaseLabel">—</span>
+      <span class="p-num"   id="phaseNum"></span>
+    </div>
+  </div>
+
+  <!-- Info accordion -->
+  <div class="info-wrap">
+    <div class="info-trigger" id="infoTrigger" onclick="toggleInfo()">
+      <div class="info-pattern-inline" id="infoPattern"></div>
+      <div class="info-chevron"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+    </div>
+    <div class="info-body" id="infoBody">
+      <div class="info-inner">
+        <div class="info-desc"  id="infoDesc"></div>
+        <div class="info-basis" id="infoBasis"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-label" id="progressLabel"></div>
+    <div class="dots" id="dots"></div>
+    <div class="goal-msg" id="goalMsg">Goal reached — well done.</div>
+  </div>
+
+  <!-- Counters -->
+  <div class="counters">
+    <div class="counter"><div class="c-val" id="runCount">0</div><div class="c-label">This run</div></div>
+    <div class="counter"><div class="c-val" id="totalCount">0</div><div class="c-label">Session total</div></div>
+  </div>
+
+  <button class="start-btn" id="startBtn">Begin</button>
+</div>
+
+<script>
+// ── Preset data ───────────────────────────────────────────
+const PRESETS = [
+  {
+    id:'anxiety', name:'Anxiety', benefit:'Calm & grounded',
+    color:'#5bb8e8', colorLight:'#0d6fa8', noUrgent: false,
+    info:'A long exhale relative to the inhale shifts the nervous system out of fight-or-flight by stimulating the vagus nerve — effective within a few cycles. Younger children use a simpler inhale–exhale pattern without a hold.',
+    basis:'Derived from pranayama; studied by Dr. Andrew Weil (Harvard) and supported by HRV research showing exhale-dominant ratios strongly increase parasympathetic tone.',
+    adult: { pattern:[4,7,8], labels:['Inhale','Hold','Exhale'], colors:['#5bb8e8','#7de8b4','#b89be8'], urgent:4, practice:8 },
+    young: { pattern:[3,5],   labels:['Inhale','Exhale'],        colors:['#5bb8e8','#b89be8'],           urgent:3, practice:5 },
+    older: { pattern:[4,7,8], labels:['Inhale','Hold','Exhale'], colors:['#5bb8e8','#7de8b4','#b89be8'], urgent:4, practice:8 },
+  },
+  {
+    id:'anger', name:'Anger', benefit:'Release & soften',
+    color:'#e87a5b', colorLight:'#b83a18', noUrgent: false,
+    info:'A 2:1 exhale-to-inhale ratio is the fastest-acting brake on the sympathetic nervous system. The short hold prevents hyperventilation while sustaining the effect. Younger children use a gentler long-exhale pattern without the hold.',
+    basis:'Based on respiratory physiology research; extended exhale patterns are used in clinical anger management and trauma-informed therapy (Levine, van der Kolk).',
+    adult: { pattern:[4,2,8], labels:['Inhale','Hold','Exhale'], colors:['#e87a5b','#e8b85b','#b89be8'], urgent:3, practice:6 },
+    young: { pattern:[3,5],   labels:['Inhale','Exhale'],        colors:['#e87a5b','#b89be8'],           urgent:3, practice:5 },
+    older: { pattern:[4,2,6], labels:['Inhale','Hold','Exhale'], colors:['#e87a5b','#e8b85b','#b89be8'], urgent:3, practice:5 },
+  },
+  {
+    id:'stress', name:'Stress', benefit:'Balance & anchor',
+    color:'#7de8b4', colorLight:'#0d7a48', noUrgent: false,
+    info:'Equal-ratio breathing slows the respiratory rate and synchronises heart rate variability, reducing cortisol and anchoring attention. Children under 10 use a 3-3-3-3 pattern matched to their natural breath capacity.',
+    basis:'Box breathing is used by US Navy SEALs and combat medics for stress inoculation. HRV studies confirm measurable autonomic balance within 5 minutes of practice.',
+    adult: { pattern:[4,4,4,4], labels:['Inhale','Hold','Exhale','Hold'], colors:['#5bb8e8','#7de8b4','#b89be8','#7de8b4'], urgent:5, practice:10 },
+    young: { pattern:[3,3,3,3], labels:['Inhale','Hold','Exhale','Hold'], colors:['#5bb8e8','#7de8b4','#b89be8','#7de8b4'], urgent:4, practice:6  },
+    older: { pattern:[4,4,4,4], labels:['Inhale','Hold','Exhale','Hold'], colors:['#5bb8e8','#7de8b4','#b89be8','#7de8b4'], urgent:5, practice:8  },
+  },
+  {
+    id:'depression', name:'Depression', benefit:'Lift & restore',
+    color:'#e8c45b', colorLight:'#8a6a00', noUrgent: false,
+    info:'Unlike anxiety or anger, depression reflects low arousal — the nervous system needs gentle activation, not suppression. Equal inhale and exhale at a slow, steady rate (5–6 breaths per minute) restores heart rate variability and gradually lifts mood.',
+    basis:'Coherent breathing research by Brown & Gerbarg (Columbia University) shows significant reductions in depressive symptoms. Supported by HRV biofeedback studies linking respiratory coherence to mood regulation and energy.',
+    adult: { pattern:[5,5], labels:['Inhale','Exhale'], colors:['#e8c45b','#e8956e'], urgent:5,  practice:10 },
+    young: { pattern:[4,4], labels:['Inhale','Exhale'], colors:['#e8c45b','#e8956e'], urgent:4,  practice:8  },
+    older: { pattern:[5,5], labels:['Inhale','Exhale'], colors:['#e8c45b','#e8956e'], urgent:5,  practice:10 },
+  },
+  {
+    id:'focus', name:'Focus', benefit:'Clear & present',
+    color:'#e8e05b', colorLight:'#7a6c00', noUrgent: false,
+    info:'Similar to box breathing but with a shortened final hold, keeping arousal slightly elevated — calming enough to clear mental noise without inducing drowsiness. Well-suited for ADHD and pre-task centering. Younger children use a simplified three-phase version.',
+    basis:'Adapted from attention-regulation protocols used in ADHD coaching and sport psychology; supported by research on prefrontal cortex activation during slow, controlled breathing.',
+    adult: { pattern:[4,4,4,2], labels:['Inhale','Hold','Exhale','Hold'], colors:['#e8e05b','#7de8b4','#b89be8','#7de8b4'], urgent:4, practice:8 },
+    young: { pattern:[3,3,3],   labels:['Inhale','Hold','Exhale'],        colors:['#e8e05b','#7de8b4','#b89be8'],           urgent:3, practice:5 },
+    older: { pattern:[4,4,4,2], labels:['Inhale','Hold','Exhale','Hold'], colors:['#e8e05b','#7de8b4','#b89be8','#7de8b4'], urgent:4, practice:6 },
+  },
+  {
+    id:'sleep', name:'Sleep', benefit:'Unwind & let go',
+    color:'#9b8be8', colorLight:'#4a2db8', noUrgent: true,
+    info:'Practised slowly while lying down, this pattern lowers heart rate and core temperature — both preconditions for sleep onset. Consistent nightly use builds a conditioned relaxation response. Younger children use a gentler two-phase pattern.',
+    basis:'Same physiological basis as the Anxiety preset, applied in a sleep context. Sleep onset research (Walker, 2017) supports slow breathing as a reliable non-pharmacological aid.',
+    adult: { pattern:[4,7,8], labels:['Inhale','Hold','Exhale'], colors:['#9b8be8','#b89be8','#7398c4'], urgent:null, practice:4 },
+    young: { pattern:[3,4],   labels:['Inhale','Exhale'],        colors:['#9b8be8','#7398c4'],           urgent:null, practice:3 },
+    older: { pattern:[4,7,8], labels:['Inhale','Hold','Exhale'], colors:['#9b8be8','#b89be8','#7398c4'], urgent:null, practice:4 },
+  },
+];
+
+// ── State ─────────────────────────────────────────────────
+let activePreset  = PRESETS[2]; // Stress
+let mode          = 'urgent';
+let ageSetting    = 'adult';    // 'adult' | 'young' | 'older'
+let lastChildAge  = 'young';
+let isChildMode   = false;
+let running       = false;
+let rafId         = null;
+let runRounds     = 0;
+let sessionRounds = 0;
+let goalRounds    = 0;
+let infoOpen      = false;
+let isDark        = true;
+
+// Current age config for a preset
+function cfg(p) { return (p || activePreset)[ageSetting]; }
+
+// ── DOM refs ──────────────────────────────────────────────
+const presetsEl     = document.getElementById('presets');
+const modeRow       = document.getElementById('modeRow');
+const ring          = document.getElementById('ring');
+const innerCircle   = document.getElementById('innerCircle');
+const phaseLabel    = document.getElementById('phaseLabel');
+const phaseNum      = document.getElementById('phaseNum');
+const dotsEl        = document.getElementById('dots');
+const progressLabel = document.getElementById('progressLabel');
+const goalMsg       = document.getElementById('goalMsg');
+const runCountEl    = document.getElementById('runCount');
+const totalCountEl  = document.getElementById('totalCount');
+const startBtn      = document.getElementById('startBtn');
+const infoTrigger   = document.getElementById('infoTrigger');
+const infoBody      = document.getElementById('infoBody');
+const infoPattern   = document.getElementById('infoPattern');
+const infoDesc      = document.getElementById('infoDesc');
+const infoBasis     = document.getElementById('infoBasis');
+const themeBtn      = document.getElementById('themeBtn');
+const childRow      = document.getElementById('childRow');
+
+const CIRC = 2 * Math.PI * 100; // 628.3
+
+// ── Colour helpers ────────────────────────────────────────
+function activeColor(p) { return isDark ? p.color : p.colorLight; }
+
+function applyThemeAccent() {
+  const c = activeColor(activePreset);
+  startBtn.style.color       = c;
+  startBtn.style.borderColor = c + '55';
+}
+
+// ── Theme toggle ──────────────────────────────────────────
+themeBtn.addEventListener('click', () => {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  document.getElementById('iconMoon').style.display = isDark  ? '' : 'none';
+  document.getElementById('iconSun').style.display  = !isDark ? '' : 'none';
+  document.querySelectorAll('.preset-btn').forEach((b, i) => {
+    b.style.setProperty('--active-color', activeColor(PRESETS[i]));
+  });
+  applyThemeAccent();
+});
+
+// ── Age mode ──────────────────────────────────────────────
+function setAgeMode(childMode) {
+  if (running) stop();
+  isChildMode = childMode;
+  document.getElementById('optAdult').classList.toggle('active', !childMode);
+  document.getElementById('optChild').classList.toggle('active',  childMode);
+  childRow.classList.toggle('visible', childMode);
+  ageSetting = childMode ? lastChildAge : 'adult';
+  onConfigChange();
+}
+
+function setChildAge(age) {
+  if (running) stop();
+  lastChildAge = age;
+  ageSetting   = age;
+  document.getElementById('optYoung').classList.toggle('active', age === 'young');
+  document.getElementById('optOlder').classList.toggle('active', age === 'older');
+  onConfigChange();
+}
+
+function onConfigChange() {
+  updateModeRow();
+  updateGoal();
+  rebuildDots();
+  renderInfo(activePreset);
+  applyThemeAccent();
+  setColor(cfg().colors[0]);
+}
+
+function updateModeRow() {
+  const c = cfg();
+  const noUrgent = activePreset.noUrgent || c.urgent === null;
+  modeRow.classList.toggle('hidden', noUrgent);
+  if (noUrgent) mode = 'practice';
+}
+
+// ── Preset chips ──────────────────────────────────────────
+let peekTimer = null;
+PRESETS.forEach(p => {
+  const btn = document.createElement('button');
+  btn.className = 'preset-btn' + (p === activePreset ? ' active' : '');
+  btn.style.setProperty('--active-color', activeColor(p));
+  btn.innerHTML = `<span class="chip-cond">${p.name}</span><span class="chip-ben">${p.benefit}</span>`;
+  btn.addEventListener('click', () => selectPreset(p));
+  // Mobile: tap active chip to peek benefit for 2s
+  btn.addEventListener('touchstart', e => {
+    if (btn.classList.contains('active')) {
+      e.preventDefault();
+      clearTimeout(peekTimer);
+      btn.classList.add('show-benefit');
+      peekTimer = setTimeout(() => btn.classList.remove('show-benefit'), 2000);
+    }
+  }, { passive: false });
+  presetsEl.appendChild(btn);
+});
+
+function selectPreset(p) {
+  if (running) stop();
+  activePreset = p;
+  document.querySelectorAll('.preset-btn').forEach((b, i) => {
+    b.classList.toggle('active', PRESETS[i] === p);
+    b.classList.remove('show-benefit');
+  });
+  onConfigChange();
+}
+
+// ── Mode ──────────────────────────────────────────────────
+function setMode(m) {
+  if (running) stop();
+  mode = m;
+  document.getElementById('optUrgent').classList.toggle('active',   m === 'urgent');
+  document.getElementById('optPractice').classList.toggle('active', m === 'practice');
+  updateGoal();
+  rebuildDots();
+}
+
+function updateGoal() {
+  const c = cfg();
+  goalRounds = mode === 'urgent' ? (c.urgent || c.practice) : c.practice;
+}
+
+// ── Info accordion ────────────────────────────────────────
+function renderInfo(p) {
+  const c = cfg(p);
+  infoPattern.innerHTML = c.pattern.map((n, i) => {
+    const sep = i < c.pattern.length - 1 ? '<div class="ipi-sep"></div>' : '';
+    return `<div class="ipi-block">
+      <span class="ipi-count" style="color:${c.colors[i]}">${n}</span>
+      <span class="ipi-name">${c.labels[i]}</span>
+    </div>${sep}`;
+  }).join('');
+  infoDesc.textContent  = p.info;
+  infoBasis.textContent = p.basis;
+}
+
+function toggleInfo() {
+  infoOpen = !infoOpen;
+  infoBody.classList.toggle('open', infoOpen);
+  infoTrigger.classList.toggle('open', infoOpen);
+}
+
+// ── Dots ──────────────────────────────────────────────────
+function rebuildDots() {
+  dotsEl.innerHTML = '';
+  goalMsg.classList.remove('visible');
+  const modeLabel = mode === 'urgent' ? 'urgent relief' : 'daily practice';
+  progressLabel.textContent = `${goalRounds} round${goalRounds !== 1 ? 's' : ''} · ${modeLabel}`;
+  const c = activeColor(activePreset);
+  for (let i = 0; i < goalRounds; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    d.style.setProperty('--dot-color', c);
+    dotsEl.appendChild(d);
+  }
+}
+
+function updateDots(n) {
+  const dots = dotsEl.querySelectorAll('.dot');
+  const reached = n >= goalRounds;
+  dots.forEach((d, i) => {
+    d.classList.toggle('done', i < n);
+    d.classList.toggle('goal', reached && i < n);
+  });
+  goalMsg.classList.toggle('visible', reached);
+}
+
+// ── Animation helpers ─────────────────────────────────────
+function setColor(color) {
+  ring.style.stroke  = color;
+  ring.style.filter  = `drop-shadow(0 0 6px ${color}) drop-shadow(0 0 18px ${color}88)`;
+  innerCircle.style.background = `radial-gradient(circle at 38% 35%, rgba(255,255,255,0.22) 0%, ${color} 45%, ${color}18 100%)`;
+  innerCircle.style.boxShadow  = `0 0 32px 10px ${color}2e`;
+}
+function setRing(t) { ring.style.strokeDashoffset = CIRC * (1 - t); }
+function setOrb(t, type) {
+  const min = 72, max = 148;
+  let s;
+  if      (type === 'in')         s = min + t * (max - min);
+  else if (type === 'hold')       s = max;
+  else if (type === 'hold-small') s = min;
+  else                            s = max - t * (max - min);
+  innerCircle.style.width  = s + 'px';
+  innerCircle.style.height = s + 'px';
+}
+
+// ── Phase runner ──────────────────────────────────────────
+function runPhase(idx, config, rs, re) {
+  return new Promise(resolve => {
+    const label = config.labels[idx];
+    const beats = config.pattern[idx];
+    setColor(config.colors[idx]);
+    phaseLabel.textContent = label;
+    let orbType;
+    if      (label === 'Inhale') orbType = 'in';
+    else if (label === 'Exhale') orbType = 'out';
+    else orbType = config.labels.slice(0, idx).includes('Exhale') ? 'hold-small' : 'hold';
+    let start = null, lastBeat = -1;
+    function tick(ts) {
+      if (!running) return;
+      if (!start) start = ts;
+      const t = Math.min((ts - start) / (beats * 1000), 1);
+      setRing(rs + t * (re - rs));
+      setOrb(t, orbType);
+      const beat = Math.min(Math.floor((ts - start) / 1000) + 1, beats);
+      if (beat !== lastBeat) { lastBeat = beat; phaseNum.textContent = beat; }
+      t < 1 ? (rafId = requestAnimationFrame(tick)) : resolve();
+    }
+    rafId = requestAnimationFrame(tick);
+  });
+}
+
+// ── Cycle ─────────────────────────────────────────────────
+async function runCycle() {
+  const config = cfg();
+  const total  = config.pattern.reduce((a, b) => a + b, 0);
+  let elapsed  = 0;
+  for (let i = 0; i < config.pattern.length; i++) {
+    if (!running) return;
+    const s = elapsed / total;
+    elapsed += config.pattern[i];
+    await runPhase(i, config, s, elapsed / total);
+  }
+  if (!running) return;
+  runRounds++; sessionRounds++;
+  runCountEl.textContent   = runRounds;
+  totalCountEl.textContent = sessionRounds;
+  updateDots(runRounds);
+  if (running) runCycle();
+}
+
+// ── Start / Stop ──────────────────────────────────────────
+function start() {
+  running = true; runRounds = 0;
+  runCountEl.textContent = 0;
+  startBtn.textContent   = 'Stop';
+  phaseLabel.textContent = '';
+  phaseNum.textContent   = '';
+  goalMsg.classList.remove('visible');
+  updateDots(0); setRing(0); setOrb(0, 'in');
+  setColor(cfg().colors[0]);
+  runCycle();
+}
+function stop() {
+  running = false;
+  if (rafId) cancelAnimationFrame(rafId);
+  startBtn.textContent   = 'Begin';
+  phaseLabel.textContent = '—';
+  phaseNum.textContent   = '';
+  setRing(0); setOrb(0, 'in');
+  setColor(cfg().colors[0]);
+}
+startBtn.addEventListener('click', () => running ? stop() : start());
+
+// ── Init ──────────────────────────────────────────────────
+updateModeRow();
+updateGoal();
+rebuildDots();
+renderInfo(activePreset);
+applyThemeAccent();
+setColor(cfg().colors[0]);
+setOrb(0, 'in');
+
+// Particles
+const pc = document.getElementById('particles');
+for (let i = 0; i < 18; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  const s = Math.random() * 4 + 2;
+  p.style.cssText = `width:${s}px;height:${s}px;left:${Math.random()*100}%;animation-duration:${9+Math.random()*13}s;animation-delay:${Math.random()*13}s;`;
+  pc.appendChild(p);
+}
+</script>
+</body>
+</html>
