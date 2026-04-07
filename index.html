@@ -148,57 +148,86 @@ body {
 .child-age-opt.active { background: rgba(91,184,232,0.14); color: #5bb8e8; }
 [data-theme="light"] .child-age-opt.active { background: rgba(15,90,150,0.1); color: #1272a8; }
 
-/* ── Preset chips ── */
+/* ── Preset chips — Style E horizontal scroll strip ── */
 .presets {
+  width: 100%;
   display: flex;
-  gap: 7px;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(to right, transparent 0, black 28px, black calc(100% - 28px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, black 28px, black calc(100% - 28px), transparent 100%);
 }
+.presets::-webkit-scrollbar { display: none; }
+
 .preset-btn {
+  flex-shrink: 0;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 100px;
-  padding: 8px 18px;
+  border-radius: 12px;
+  padding: 0;
   cursor: pointer;
-  font-family: 'Lato', sans-serif;
-  font-weight: 300;
-  letter-spacing: 0.08em;
   color: var(--text);
   transition: border-color 0.25s, color 0.25s, background 0.25s;
-  /* Grid stacks both spans in the same cell so button sizes to the widest */
-  display: inline-grid;
-  place-items: center;
+  width: 72px;
+  height: 62px;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 .preset-btn.active {
   border-color: var(--active-color);
-  color: var(--active-color);
   background: var(--surface2);
 }
-.chip-cond, .chip-ben {
-  grid-row: 1; grid-column: 1;
-  transition: opacity 0.28s ease;
-  white-space: nowrap;
+
+/* Both states fill the button absolutely, crossfade between them */
+.chip-state-cond,
+.chip-state-ben {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  transition: opacity 0.25s ease;
   pointer-events: none;
-  font-size: 0.83rem;
-  letter-spacing: 0.08em;
+}
+.chip-state-ben { opacity: 0; }
+
+.chip-icon { font-size: 1.1rem; line-height: 1; }
+.chip-cond {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  color: var(--text);
+  transition: color 0.25s;
 }
 .chip-ben {
-  opacity: 0;
+  font-size: 0.6rem;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
   font-style: italic;
-  font-size: 0.75rem;
-  letter-spacing: 0.05em;
   color: var(--text);
+  transition: color 0.25s;
+  padding: 0 4px;
+  text-align: center;
+  line-height: 1.3;
 }
+.preset-btn.active .chip-cond,
 .preset-btn.active .chip-ben { color: var(--active-color); }
-/* Desktop hover */
+
+/* Desktop hover crossfade */
 @media (hover: hover) {
-  .preset-btn:hover .chip-cond { opacity: 0; }
-  .preset-btn:hover .chip-ben  { opacity: 1; }
+  .preset-btn:hover .chip-state-cond { opacity: 0; }
+  .preset-btn:hover .chip-state-ben  { opacity: 1; }
 }
-/* Touch tap on active chip */
-.preset-btn.show-benefit .chip-cond { opacity: 0; }
-.preset-btn.show-benefit .chip-ben  { opacity: 1; }
+/* Mobile peek on re-tap */
+.preset-btn.show-benefit .chip-state-cond { opacity: 0; }
+.preset-btn.show-benefit .chip-state-ben  { opacity: 1; }
 
 /* ── Mode toggle ── */
 .mode-row {
@@ -454,7 +483,7 @@ body {
 // ── Preset data ───────────────────────────────────────────
 const PRESETS = [
   {
-    id:'anxiety', name:'Anxiety', benefit:'Calm & grounded',
+    id:'anxiety', icon:'🌊', name:'Anxiety', benefit:'Calm & grounded',
     color:'#5bb8e8', colorLight:'#0d6fa8', noUrgent: false,
     info:'A long exhale relative to the inhale shifts the nervous system out of fight-or-flight by stimulating the vagus nerve — effective within a few cycles. Younger children use a simpler inhale–exhale pattern without a hold.',
     basis:'Derived from pranayama; studied by Dr. Andrew Weil (Harvard) and supported by HRV research showing exhale-dominant ratios strongly increase parasympathetic tone.',
@@ -463,7 +492,7 @@ const PRESETS = [
     older: { pattern:[4,7,8], labels:['Inhale','Hold','Exhale'], colors:['#5bb8e8','#7de8b4','#b89be8'], urgent:4, practice:8 },
   },
   {
-    id:'anger', name:'Anger', benefit:'Release & soften',
+    id:'anger', icon:'🔥', name:'Anger', benefit:'Release & soften',
     color:'#e87a5b', colorLight:'#b83a18', noUrgent: false,
     info:'A 2:1 exhale-to-inhale ratio is the fastest-acting brake on the sympathetic nervous system. The short hold prevents hyperventilation while sustaining the effect. Younger children use a gentler long-exhale pattern without the hold.',
     basis:'Based on respiratory physiology research; extended exhale patterns are used in clinical anger management and trauma-informed therapy (Levine, van der Kolk).',
@@ -472,7 +501,7 @@ const PRESETS = [
     older: { pattern:[4,2,6], labels:['Inhale','Hold','Exhale'], colors:['#e87a5b','#e8b85b','#b89be8'], urgent:3, practice:5 },
   },
   {
-    id:'stress', name:'Stress', benefit:'Balance & anchor',
+    id:'stress', icon:'⚖️', name:'Stress', benefit:'Balance & anchor',
     color:'#7de8b4', colorLight:'#0d7a48', noUrgent: false,
     info:'Equal-ratio breathing slows the respiratory rate and synchronises heart rate variability, reducing cortisol and anchoring attention. Children under 10 use a 3-3-3-3 pattern matched to their natural breath capacity.',
     basis:'Box breathing is used by US Navy SEALs and combat medics for stress inoculation. HRV studies confirm measurable autonomic balance within 5 minutes of practice.',
@@ -481,7 +510,7 @@ const PRESETS = [
     older: { pattern:[4,4,4,4], labels:['Inhale','Hold','Exhale','Hold'], colors:['#5bb8e8','#7de8b4','#b89be8','#7de8b4'], urgent:5, practice:8  },
   },
   {
-    id:'depression', name:'Depression', benefit:'Lift & restore',
+    id:'depression', icon:'☀️', name:'Depression', benefit:'Lift & restore',
     color:'#e8c45b', colorLight:'#8a6a00', noUrgent: false,
     info:'Unlike anxiety or anger, depression reflects low arousal — the nervous system needs gentle activation, not suppression. Equal inhale and exhale at a slow, steady rate (5–6 breaths per minute) restores heart rate variability and gradually lifts mood.',
     basis:'Coherent breathing research by Brown & Gerbarg (Columbia University) shows significant reductions in depressive symptoms. Supported by HRV biofeedback studies linking respiratory coherence to mood regulation and energy.',
@@ -490,7 +519,7 @@ const PRESETS = [
     older: { pattern:[5,5], labels:['Inhale','Exhale'], colors:['#e8c45b','#e8956e'], urgent:5,  practice:10 },
   },
   {
-    id:'focus', name:'Focus', benefit:'Clear & present',
+    id:'focus', icon:'🎯', name:'Focus', benefit:'Clear & present',
     color:'#e8e05b', colorLight:'#7a6c00', noUrgent: false,
     info:'Similar to box breathing but with a shortened final hold, keeping arousal slightly elevated — calming enough to clear mental noise without inducing drowsiness. Well-suited for ADHD and pre-task centering. Younger children use a simplified three-phase version.',
     basis:'Adapted from attention-regulation protocols used in ADHD coaching and sport psychology; supported by research on prefrontal cortex activation during slow, controlled breathing.',
@@ -499,7 +528,7 @@ const PRESETS = [
     older: { pattern:[4,4,4,2], labels:['Inhale','Hold','Exhale','Hold'], colors:['#e8e05b','#7de8b4','#b89be8','#7de8b4'], urgent:4, practice:6 },
   },
   {
-    id:'sleep', name:'Sleep', benefit:'Unwind & let go',
+    id:'sleep', icon:'🌙', name:'Sleep', benefit:'Unwind & let go',
     color:'#9b8be8', colorLight:'#4a2db8', noUrgent: true,
     info:'Practised slowly while lying down, this pattern lowers heart rate and core temperature — both preconditions for sleep onset. Consistent nightly use builds a conditioned relaxation response. Younger children use a gentler two-phase pattern.',
     basis:'Same physiological basis as the Anxiety preset, applied in a sleep context. Sleep onset research (Walker, 2017) supports slow breathing as a reliable non-pharmacological aid.',
@@ -612,7 +641,15 @@ PRESETS.forEach(p => {
   const btn = document.createElement('button');
   btn.className = 'preset-btn' + (p === activePreset ? ' active' : '');
   btn.style.setProperty('--active-color', activeColor(p));
-  btn.innerHTML = `<span class="chip-cond">${p.name}</span><span class="chip-ben">${p.benefit}</span>`;
+  btn.innerHTML = `
+      <div class="chip-state-cond">
+        <span class="chip-icon">${p.icon}</span>
+        <span class="chip-cond">${p.name}</span>
+      </div>
+      <div class="chip-state-ben">
+        <span class="chip-icon">${p.icon}</span>
+        <span class="chip-ben">${p.benefit}</span>
+      </div>`;
   btn.addEventListener('click', () => selectPreset(p));
   // Mobile: tap active chip to peek benefit for 2s
   btn.addEventListener('touchstart', e => {
@@ -633,6 +670,7 @@ function selectPreset(p) {
     b.classList.toggle('active', PRESETS[i] === p);
     b.classList.remove('show-benefit');
   });
+  centreChip(document.querySelectorAll('.preset-btn')[PRESETS.indexOf(p)]);
   onConfigChange();
 }
 
@@ -791,6 +829,22 @@ renderInfo(activePreset);
 applyThemeAccent();
 setColor(cfg().colors[0]);
 setOrb(0, 'in');
+
+
+// ── Centre active chip in strip on load ──────────────────
+(function() {
+  const strip = document.getElementById('presets');
+  // Wait one frame for layout, then scroll active chip into centre
+  requestAnimationFrame(() => {
+    const active = strip.querySelector('.preset-btn.active');
+    if (!active) return;
+    const stripW  = strip.offsetWidth;
+    const chipL   = active.offsetLeft;
+    const chipW   = active.offsetWidth;
+    // Scroll so active chip is centred, revealing partial chips on both sides
+    strip.scrollLeft = chipL - (stripW / 2) + (chipW / 2);
+  });
+})();
 
 // Particles
 const pc = document.getElementById('particles');
