@@ -663,6 +663,16 @@ PRESETS.forEach(p => {
   presetsEl.appendChild(btn);
 });
 
+function centreChip(btn) {
+  if (!btn) return;
+  const strip = document.getElementById('presets');
+  const stripW = strip.offsetWidth;
+  strip.scrollTo({
+    left: btn.offsetLeft - (stripW / 2) + (btn.offsetWidth / 2),
+    behavior: 'smooth'
+  });
+}
+
 function selectPreset(p) {
   if (running) stop();
   activePreset = p;
